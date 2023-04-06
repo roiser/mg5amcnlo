@@ -5688,9 +5688,11 @@ class HelasMultiProcess(base_objects.PhysicsObject):
         col_basis = color_amp.ColorBasis()
         new_amp = matrix_element.get_base_amplitude()
         matrix_element.set('base_amplitude', new_amp)
-        
-        colorize_obj = col_basis.create_color_dict_list(\
+
+        colorize_obj = col_basis.create_chris_color_dict_list(\
                          matrix_element.get('base_amplitude'))
+        #colorize_obj = col_basis.create_color_dict_list(\
+        #    matrix_element.get('base_amplitude'))
 
         try:
             # If the color configuration of the ME has
@@ -5718,10 +5720,12 @@ class HelasMultiProcess(base_objects.PhysicsObject):
 
         matrix_element.set('color_basis',
                                list_color_basis[col_index])
+        print(matrix_element.get('color_basis'))
+        #stop
         matrix_element.set('color_matrix',
                                list_color_matrices[col_index])
-
-
+        print(matrix_element.get('color_matrix'))
+        stop
     # Below is the type of HelasMatrixElement which should be created by this
     # HelasMultiProcess class
     matrix_element_class = HelasMatrixElement

@@ -86,7 +86,108 @@ class ColorBasis(dict):
                     
         return res_dict
 
-    
+    ## <<
+    def colorSingletProjector(self, colorize_dict, pid_charge, pid_numbers):
+
+        var = list(range(len(pid_numbers)//2))
+        #print(var)
+        for i in var:
+        #if pid_charge<0:
+        #    pid_numbers.reverse()
+        #else: << see notes and continue with if statement here
+            closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
+        #closingCS=color_algebra.ColorString(\
+        #        [color_algebra.T(pid_numbers[1], pid_numbers[0])])
+            closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
+        # Append singlet projection to all color strings for this diagram.
+            for CS in colorize_dict.values():
+                CS.product(closingCS)
+                #print(i)
+    def colorOctetProjector(self, colorize_dict, pid_charge, pid_numbers):
+
+        #if pid_charge<0:
+        #    pid_numbers.reverse()
+        var = list(range(len(pid_numbers)//2))
+        #print(var)
+        for i in var:    
+            closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
+        #else: closingCS=color_algebra.ColorString(\
+        #                                        [color_algebra.T(10000 + pid_numbers[0],pid_numbers[1], pid_numbers[0])],
+        #                                        math.sqrt(fractions.Fraction(2, 1)))
+     # Append octet projection to all color strings for this diagram.                                                       
+            for CS in colorize_dict.values():
+                CS.product(closingCS)
+
+    def colorSingletOctetProjector(self, colorize_dict, pid_charge, pid_numbers):
+
+        var = list(range(len(pid_numbers)//2))
+        
+        if var == [0]: #relevant for [3,4] e.g. single quarkonium production a+b->QQbar or associated production e.g. a+b->QQbar+g
+            for i in var:
+                    ####singlet
+                    closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
+                    closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
+                    ####octet
+                    #closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
+                    for CS in colorize_dict.values():
+                        CS.product(closingCS)
+        elif var == [0,1]: #relevant for [3,4,5,6] e.g. double quarkonium production a+b -> (QQbar)_1 (QQbar)_2 or associated production
+              for i in var:
+                      #####Q_1 and Q_2 singlet  
+                      closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
+                      closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
+                      #####Q_1 and Q_2 octet
+                      #closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
+                      for CS in colorize_dict.values():
+                          CS.product(closingCS)
+        #####Q_1 singlet and Q_2 octet
+            #closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[1], pid_numbers[0])])
+            #closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
+            #closingCS1=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2],pid_numbers[3], pid_numbers[2])],math.sqrt(fractions.Fraction(2, 1)))
+        #####Q_1 octet and Q_2 singlet
+            #closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[3], pid_numbers[2])])
+            #closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2) 
+            #closingCS1=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[0],pid_numbers[1], pid_numbers[0])],math.sqrt(fractions.Fraction(2, 1)))
+            #for CS in colorize_dict.values():
+            #    CS.product(closingCS)
+            #    CS.product(closingCS1)
+                      
+    def create_chris_color_dict_list(self, amplitude):
+        """Returns a list of colorize dict for all diagrams in amplitude. Also updates the _list_color_dict object accordingly."""
+
+        list_color_dict = []
+
+        for diagram in amplitude.get('diagrams'):
+
+            colorize_dict = self.colorize(diagram,
+                                        amplitude.get('process').get('model'))
+
+            pid_numbers = [ 3, 4, 5, 6 ]
+            #pid_numbers = [3,4] 
+            pid_charge=3#check generalise later amplitude['process']['model'].get_particle(starting_leg.get('id')).get_color()
+            #pid_numbers=[starting_leg.get('number'),finishing_leg.get('number')]
+            #self.colorSingletProjector(colorize_dict,pid_charge,pid_numbers)
+            #self.colorOctetProjector(colorize_dict,pid_charge,pid_numbers)
+            self.colorSingletOctetProjector(colorize_dict,pid_charge,pid_numbers)
+            
+            list_color_dict.append(colorize_dict)
+
+        self._list_color_dict = list_color_dict
+
+        return list_color_dict
+                            
+#     def colorProjector(self, colorize_dict, FLAG):
+#        """ Add a color singlet or color octet projector at amplitude level. """
+#
+#    	if FLAG=“color_singlet”:  
+#            closingCS=color_algebra.ColorString(\
+#              [color_algebra.T(*(i+j))])  
+#	closingCS.Nc_power = fractions.Fraction(-1,2)
+#        elif FLAG=“color_octet”:
+#            closingCS=color_algebra.ColorString(\
+#              [color_algebra.T(*(a+ij))],
+#             math.sqrt(fractions.Fraction(2, 1)))
+    ## >>
 
     def add_vertex(self, vertex, diagram, model,
                    repl_dict, res_dict, min_index, id0_rep=[]):
