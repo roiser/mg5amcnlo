@@ -5689,6 +5689,8 @@ class HelasMultiProcess(base_objects.PhysicsObject):
         new_amp = matrix_element.get_base_amplitude()
         matrix_element.set('base_amplitude', new_amp)
 
+        # ONIA
+        # Color Projection
         colorize_obj = col_basis.create_chris_color_dict_list(\
                          matrix_element.get('base_amplitude'))
         #colorize_obj = col_basis.create_color_dict_list(\
@@ -5720,6 +5722,7 @@ class HelasMultiProcess(base_objects.PhysicsObject):
 
         matrix_element.set('color_basis',
                                list_color_basis[col_index])
+        # ONIA color projection check
         print(matrix_element.get('color_basis'))
         #stop
         matrix_element.set('color_matrix',

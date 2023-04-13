@@ -86,6 +86,8 @@ class ColorBasis(dict):
                     
         return res_dict
 
+    # ONIA
+    # Color projectors
     ## <<
     def colorSingletProjector(self, colorize_dict, pid_charge, pid_numbers):
 
@@ -151,6 +153,45 @@ class ColorBasis(dict):
             #for CS in colorize_dict.values():
             #    CS.product(closingCS)
             #    CS.product(closingCS1)
+
+    def OniumColorString(self, pid_charges, pid_numbers, charge,offset=10000):
+        """Do the color projection for a given onium"""
+        if len(pid_numbers) != 2 or len(pid_charges) != 2:
+            raise ColorBasisError("Only the projection of two particles is supported")
+        if pid_charges==(1,1):
+            if charge != 1:
+                raise ColorBasisError("Only color singlet is possible when charges=%d,%d"%pid_charges)
+            OniumCS=color_algebra.ColorString([color_algebra.ColorOne()])
+        elif pid_charges==(3,-3) or pid_charges==(-3,3):
+            if charge not in [1,8]:
+                raise ColorBasisError("Only color singlet/octet is possible when charges=%d,%d"%pid_charges)
+            if pid_charges==(-3,3):
+                pidnums=(pid_numbers[1],pid_numbers[0])
+            else:
+                pidnums=(pid_numbers[0],pid_numbers[1])
+            if charge == 1:
+                # color singlet
+                OniumCS=color_algebra.ColorString([color_algebra.T(pidnums[1], pidnums[0])])
+                OniumCS.Nc_power = OniumCS.Nc_power+fractions.Fraction(-1,2)
+            else:
+                # color octet
+                OniumCS=color_algebra.ColorString([color_algebra.T(offset+pidnums[0],pidnums[1],pidnums[0])],\
+                                                      math.sqrt(fractions.Fraction(2,1)))
+        else:
+            raise ColorBasisError("Unknown charges=%d,%d for color projection of onium"%pid_charges)
+
+        return OniumCS
+
+    def OniaColorProjection(self, colorize_dict, pid_color_numbers):
+        """Color projection for onia"""
+        # pid_color_numbers=[(pid_charges1,pid_numbers1, charge1),...]
+        for (pid_charges,pid_numbers,charge) in pid_color_numbers:
+            OniumCS=self.OniumColorString(pid_charges, pid_numbers, charge)
+            for CS in colorize_dict.values():
+                CS.product(OniumCS)
+
+        return
+        
                       
     def create_chris_color_dict_list(self, amplitude):
         """Returns a list of colorize dict for all diagrams in amplitude. Also updates the _list_color_dict object accordingly."""
@@ -162,13 +203,15 @@ class ColorBasis(dict):
             colorize_dict = self.colorize(diagram,
                                         amplitude.get('process').get('model'))
 
-            pid_numbers = [ 3, 4, 5, 6 ]
+            #pid_numbers = [ 3, 4, 5, 6 ]
             #pid_numbers = [3,4] 
-            pid_charge=3#check generalise later amplitude['process']['model'].get_particle(starting_leg.get('id')).get_color()
+            #pid_charge=3#check generalise later amplitude['process']['model'].get_particle(starting_leg.get('id')).get_color()
             #pid_numbers=[starting_leg.get('number'),finishing_leg.get('number')]
             #self.colorSingletProjector(colorize_dict,pid_charge,pid_numbers)
             #self.colorOctetProjector(colorize_dict,pid_charge,pid_numbers)
-            self.colorSingletOctetProjector(colorize_dict,pid_charge,pid_numbers)
+            #self.colorSingletOctetProjector(colorize_dict,pid_charge,pid_numbers)
+            pid_color_numbers = [((3,-3),(3,4),1),((3,-3),(5,6),1)]
+            self.OniaColorProjection(colorize_dict, pid_color_numbers)
             
             list_color_dict.append(colorize_dict)
 
