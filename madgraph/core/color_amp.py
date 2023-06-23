@@ -88,71 +88,6 @@ class ColorBasis(dict):
 
     # ONIA
     # Color projectors
-    ## <<
-    def colorSingletProjector(self, colorize_dict, pid_charge, pid_numbers):
-
-        var = list(range(len(pid_numbers)//2))
-        #print(var)
-        for i in var:
-        #if pid_charge<0:
-        #    pid_numbers.reverse()
-        #else: << see notes and continue with if statement here
-            closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
-        #closingCS=color_algebra.ColorString(\
-        #        [color_algebra.T(pid_numbers[1], pid_numbers[0])])
-            closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
-        # Append singlet projection to all color strings for this diagram.
-            for CS in colorize_dict.values():
-                CS.product(closingCS)
-                #print(i)
-    def colorOctetProjector(self, colorize_dict, pid_charge, pid_numbers):
-
-        #if pid_charge<0:
-        #    pid_numbers.reverse()
-        var = list(range(len(pid_numbers)//2))
-        #print(var)
-        for i in var:    
-            closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
-        #else: closingCS=color_algebra.ColorString(\
-        #                                        [color_algebra.T(10000 + pid_numbers[0],pid_numbers[1], pid_numbers[0])],
-        #                                        math.sqrt(fractions.Fraction(2, 1)))
-     # Append octet projection to all color strings for this diagram.                                                       
-            for CS in colorize_dict.values():
-                CS.product(closingCS)
-
-    def colorSingletOctetProjector(self, colorize_dict, pid_charge, pid_numbers):
-
-        var = list(range(len(pid_numbers)//2))
-        
-        if var == [0]: #relevant for [3,4] e.g. single quarkonium production a+b->QQbar or associated production e.g. a+b->QQbar+g
-            for i in var:
-                    ####singlet
-                    closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
-                    closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
-                    ####octet
-                    #closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
-                    for CS in colorize_dict.values():
-                        CS.product(closingCS)
-        elif var == [0,1]: #relevant for [3,4,5,6] e.g. double quarkonium production a+b -> (QQbar)_1 (QQbar)_2 or associated production
-              for i in var:
-                      #####Q_1 and Q_2 singlet  
-                      closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[2*i+1], pid_numbers[2*i])])
-                      closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
-                      #####Q_1 and Q_2 octet
-                      #closingCS=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2*i],pid_numbers[2*i+1], pid_numbers[2*i])],math.sqrt(fractions.Fraction(2, 1)))
-                      for CS in colorize_dict.values():
-                          CS.product(closingCS)
-        #####Q_1 singlet and Q_2 octet
-            #closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[1], pid_numbers[0])])
-            #closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2)
-            #closingCS1=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[2],pid_numbers[3], pid_numbers[2])],math.sqrt(fractions.Fraction(2, 1)))
-        #####Q_1 octet and Q_2 singlet
-            #closingCS=color_algebra.ColorString([color_algebra.T(pid_numbers[3], pid_numbers[2])])
-            #closingCS.Nc_power = closingCS.Nc_power+fractions.Fraction(-1,2) 
-            #closingCS1=color_algebra.ColorString([color_algebra.T(10000 + pid_numbers[0],pid_numbers[1], pid_numbers[0])],math.sqrt(fractions.Fraction(2, 1)))
-            #for CS in colorize_dict.values():
-            #    CS.product(closingCS)
-            #    CS.product(closingCS1)
 
     def OniumColorString(self, pid_charges, pid_numbers, charge,offset=10000):
         """Do the color projection for a given onium"""
@@ -176,7 +111,9 @@ class ColorBasis(dict):
             else:
                 # color octet
                 OniumCS=color_algebra.ColorString([color_algebra.T(offset+pidnums[0],pidnums[1],pidnums[0])],\
-                                                      math.sqrt(fractions.Fraction(2,1)))
+                                                      1)
+                #OniumCS=color_algebra.ColorString([color_algebra.T(offset+pidnums[0],pidnums[1],pidnums[0])],\
+                #                                      math.sqrt(fractions.Fraction(2,1)))
         else:
             raise ColorBasisError("Unknown charges=%d,%d for color projection of onium"%pid_charges)
 
@@ -191,7 +128,6 @@ class ColorBasis(dict):
                 CS.product(OniumCS)
 
         return
-        
                       
     def create_chris_color_dict_list(self, amplitude):
         """Returns a list of colorize dict for all diagrams in amplitude. Also updates the _list_color_dict object accordingly."""
@@ -202,7 +138,6 @@ class ColorBasis(dict):
 
             colorize_dict = self.colorize(diagram,
                                         amplitude.get('process').get('model'))
-
             #pid_numbers = [ 3, 4, 5, 6 ]
             #pid_numbers = [3,4] 
             #pid_charge=3#check generalise later amplitude['process']['model'].get_particle(starting_leg.get('id')).get_color()
@@ -210,7 +145,8 @@ class ColorBasis(dict):
             #self.colorSingletProjector(colorize_dict,pid_charge,pid_numbers)
             #self.colorOctetProjector(colorize_dict,pid_charge,pid_numbers)
             #self.colorSingletOctetProjector(colorize_dict,pid_charge,pid_numbers)
-            pid_color_numbers = [((3,-3),(3,4),1),((3,-3),(5,6),1)]
+            #pid_color_numbers = [((3,-3),(3,4),1),((3,-3),(5,6),1)]
+            pid_color_numbers = [((3,-3),(3,4),1)]
             self.OniaColorProjection(colorize_dict, pid_color_numbers)
             
             list_color_dict.append(colorize_dict)
@@ -584,7 +520,7 @@ class ColorBasis(dict):
 
         return res_cs
 
-    def color_flow_decomposition(self, repr_dict, ninitial):
+    def color_flow_decomposition(self, repr_dict0, ninitial):
         """Returns the color flow decomposition of the current basis, i.e. a 
         list of dictionaries (one per color basis entry) with keys corresponding
         to external leg numbers and values tuples containing two color indices
@@ -597,6 +533,16 @@ class ColorBasis(dict):
         offset1 = 1000
         offset2 = 2000
         offset3 = 3000
+
+        # ONIA
+        # ad hoc change for onia
+        #h offset4 = 10000
+        repr_dict = copy.copy(repr_dict0)
+        #h repr_dict[3] = 8
+        #h del repr_dict[4]
+
+        #print(repr_dict)
+        #stop
 
         res = []
 
@@ -618,9 +564,16 @@ class ColorBasis(dict):
 
                 # Build the fake indices replacements for octets
                 if abs(leg_repr) == 8:
-                    fake_repl.append((leg_repr, leg_num,
-                                      offset1 + leg_num,
-                                      offset2 + leg_num))
+                    # ONIA
+                    # ad hoc
+                    #h if leg_num == 3:
+                    #h    fake_repl.append((leg_repr, offset4+leg_num,
+                    #h                      offset1+offset4+leg_num,
+                    #h                      offset2+offset4+leg_num))
+                    #h else:
+                        fake_repl.append((leg_repr, leg_num,
+                                          offset1 + leg_num,
+                                          offset2 + leg_num))
                 # Build the fake indices for sextets
                 elif leg_repr in [-6, 6]:
                     fake_repl.append((leg_repr, leg_num,
@@ -654,6 +607,13 @@ class ColorBasis(dict):
                         res_dict[index - offset1][i] = offset
                     elif index > offset2 and index < offset3:
                         res_dict[index - offset2][i] = offset
+                    #h elif index > offset4:
+                        # ONIA
+                        # ad hoc
+                        #h if index > offset4 and index < offset4+offset2:
+                        #h    res_dict[index - offset4 - offset1][i] = offset
+                        #h elif index > offset4+offset2:
+                        #h    res_dict[index - offset4 - offset2][i] = offset
                     elif index > offset3:
                         # For color sextets, use negative triplet
                         # number to reperesent antitriplet and vice
