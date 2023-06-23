@@ -20,6 +20,7 @@ import re
 import madgraph
 import madgraph.core.base_objects as base_objects
 import madgraph.core.helas_objects as helas_objects
+import madgraph.core.color_amp as color_amp
 import madgraph.loop.loop_helas_objects as loop_helas_objects
 import models.check_param_card as check_param_card
 import aloha.aloha_writers as aloha_writers
@@ -191,7 +192,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
                     res.extend(self.get_sqso_target_skip_code(ctamp.get('number'), 
                       sqso_max_ctamp, 2000, split_orders, squared_orders,
                       "# At this point, all CT amps needed for %s are computed."))
-        
+                    
         if not include_CT:
             return res, []
         
@@ -216,6 +217,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
         res_born_CT, res_UVCT = self.get_born_ct_helas_calls(loop_matrix_element)
         res = res_born_CT + res_UVCT + \
                               self.get_loop_amp_helas_calls(loop_matrix_element)
+        
         return res
     
 
@@ -245,8 +247,60 @@ class HelasCallWriter(base_objects.PhysicsObject):
             for amplitude in diagram.get('amplitudes'):
                 res.append(self.get_amplitude_call(amplitude))
 
-        return res
+        # CAF ONIA DEBUG                                                                                                                           
+        # for spin triplet (for spin singlet, replace spin variable with 0 in eff wavefn onia_ixxxx)                                                                                                                        
+        #newres = ['PONIA(0:3)=P(0:3,3)+P(0:3,4)',\
+        #              'MONIA = MDL_MC+MDL_MC',\
+        #              'CALL ONIA_OXXXXX(P(0,3),MDL_MC,PONIA(0),MONIA,NHEL(3),W(1,3))',\
+        #              'CALL ONIA_IXXXXX(P(0,4),MDL_MC,PONIA(0),MONIA,1,NHEL(3),NHEL(4),W(1,4))',\
+        #              'C '+res[2],\
+        #              'C '+res[3]]
 
+        #res = res[:2]+newres+res[4:]
+        # CAF
+        
+#        return res
+
+ #   def print_spin_projectors(self, matrix_element):
+        #may want to import madgraph.core.color_amp as color_amp
+        #pid_numbers = [((3, 4), 0), ((5, 6), 1), ((7, 8), 0), ((9, 10), 1)] #fetch from color_amp.py if possible, #contains quarkonia legs (a,b) and spin c in pid_numbers array of tuples ((a,b),c)
+        pid_numbers = [((3, 4), 0), ((5, 6), 1)]
+        #pid_numbers = [((3, 4), 0)]
+        #pid_numbers = color_amp.ColorBasis.create_chris_color_dict_list.pid_color_numbers
+
+        momenta = []
+        newres=[]
+        
+        for index, item in enumerate(pid_numbers):
+            leg1 = item[0][0]
+            leg2 = item[0][1]
+
+            momentum_leg1 = index #matrix_element.get_momentum(leg1) //apparantly get_momentum is not in matrix_element 
+            momentum_leg2 = index #matrix_element.get_momentum(leg2)
+            mass_leg1 = index #here put mass of leg1
+            mass_leg2 = index #here put mass of leg2
+            
+            momenta.append(momentum_leg1)
+            momenta.append(momentum_leg2)
+            
+            Ponia_index = momentum_leg1 + momentum_leg2
+            Monia_index = mass_leg1 + mass_leg2
+         
+            #print(f"Ponia_{index}")
+            #print(Ponia_index)
+            #Ponia_index(0:3) = matrix_element.get_momentum(item[0][0]) +
+            call_onia = "CALL ONIA_OXXXXX(P(0,{}), mass_leg1, Ponia_{}(0), Monia_{}, NHEL({}), W(1,{}))".format(item[0][0], index, index, item[0][0], item[0][0])
+            call_oniy = "CALL ONIA_IXXXXX(P(0,{}), mass_leg2, Ponia_{}(0), Monia_{}, {}, NHEL({}), NHEL({}), W(1,{}))".format(item[0][1], index, index, item[1], item[0][0], item[0][1], item[0][1])
+            newres1 =   "{}\n{}".format(call_onia, call_oniy)
+            newres.append(newres1)
+            
+        #print(newres)
+        #stop
+        res = res[:2]+newres+res[2*(1+len(pid_numbers)):]
+            
+        return res
+        # end ONIA    
+    
     def get_wavefunction_calls(self, wavefunctions):
         """Return a list of strings, corresponding to the Helas calls
         for the matrix element"""
@@ -256,7 +310,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
                repr(wavefunctions)
 
         res = [self.get_wavefunction_call(wf) for wf in wavefunctions]
-
+        
         return res
 
     def get_amplitude_calls(self, matrix_element):
@@ -273,7 +327,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
                        diagram.get('number'))
             for amplitude in diagram.get('amplitudes'):
                 res.append(self.get_amplitude_call(amplitude))
-
+        
         return res
 
     def get_wavefunction_call(self, wavefunction):
@@ -291,13 +345,14 @@ class HelasCallWriter(base_objects.PhysicsObject):
             call, n = re.subn(',\s*fk_(?!ZERO)\w*\s*,', ', ZERO,', str(call), flags=re.I)
             if n:
                 self.width_tchannel_set_tozero = True
+        
         return call
         
 
     def get_amplitude_call(self, amplitude):
         """Return the function for writing the amplitude
         corresponding to the key"""
-
+        
         try:
             call = self["amplitudes"][amplitude.get_call_key()]
         except KeyError as error:
@@ -308,7 +363,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
     def add_wavefunction(self, key, function):
         """Set the function for writing the wavefunction
         corresponding to the key"""
-
+        
         assert isinstance(key, tuple), \
                        "%s is not a valid tuple for wavefunction key" % key
         
@@ -321,7 +376,7 @@ class HelasCallWriter(base_objects.PhysicsObject):
     def add_amplitude(self, key, function):
         """Set the function for writing the amplitude
         corresponding to the key"""
-
+        
         assert isinstance(key, tuple), \
                         "%s is not a valid tuple for amplitude key" % str(key)
 
