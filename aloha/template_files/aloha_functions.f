@@ -10,6 +10,105 @@ C It is subject to the ALOHA license which should accompany this
 C distribution.
 C
 C###############################################################################
+C     chris_onia (routines taken from NLO_Onia/2.5.5_Onia/aloha/template_files/aloha_functions.f
+C     corresponds to (p2s-m2)GammaS/2M u(P,lambda) in notes <<-- check normalisation 
+      subroutine onia_ixxxxx(p1, fmass1, ptot, fmasstot, spin,
+     $       nhel, ssz, fi)
+      implicit none
+      double complex fi(6),fitot(6),vc(6)
+      double precision p1(0:3),ptot(0:3),fmass1,fmasstot
+      integer nhel,spin,ssz
+
+      double precision rZero, rHalf, rTwo
+      parameter( rZero = 0.0d0, rHalf = 0.5d0, rTwo = 2.0d0 )
+      double complex im
+      parameter( im = dcmplx(0.D0,1.0D0))
+
+      fi(1) = dcmplx(p1(0),p1(3))*(+1)
+      fi(2) = dcmplx(p1(1),p1(2))*(+1)
+
+      call ixxxxx(ptot,fmasstot,nhel,1,fitot)
+      if(spin.eq.0)then
+c   spin singlet                                                                                                                                             
+         fi(3) = fmass1*fitot(3)+dcmplx(-p1(1),p1(2))*fitot(6)+
+     $        dcmplx(p1(0)-p1(3),0.D0)*fitot(5)
+         fi(4) = fmass1*fitot(4)+dcmplx(-p1(1),-p1(2))*fitot(5)+
+     $        dcmplx(p1(0)+p1(3),0.D0)*fitot(6)
+         fi(5) = -fmass1*fitot(5)+dcmplx(-p1(1),p1(2))*fitot(4)+
+     $        dcmplx(-p1(0)-p1(3),0.D0)*fitot(3)
+         fi(6) = -fmass1*fitot(6)+dcmplx(-p1(1),-p1(2))*fitot(3)+
+     $        dcmplx(-p1(0)+p1(3),0.D0)*fitot(4)
+      elseif(spin.eq.1)then
+c   spin triplet
+         call vxxxxx(ptot,fmasstot,ssz,1,vc)
+         fi(3) = fmass1*fitot(6)*(vc(4)-im*vc(5))+
+     $        fitot(4)*(dcmplx(p1(0)-p1(3),0.D0)*
+     $        (vc(4)-im*vc(5))-dcmplx(p1(1),-p1(2))*
+     $        (vc(3)-vc(6)))-fmass1*fitot(5)*
+     $        (vc(3)-vc(6))+fitot(3)*(-dcmplx(p1(1),-p1(2))*
+     $        (vc(4)+im*vc(5))+dcmplx(p1(0)-p1(3),0.D0)*
+     $        (vc(3)+vc(6)))
+         fi(4) = fmass1*fitot(5)*(vc(4)+im*vc(5))+
+     $        fitot(4)*(-dcmplx(p1(1),p1(2))*(vc(4)-im*vc(5))+
+     $        dcmplx(p1(0)+p1(3),0.D0)*(vc(3)-vc(6)))-
+     $        fmass1*fitot(6)*(vc(3)+vc(6))+
+     $        fitot(3)*(dcmplx(p1(0)+p1(3),0.D0)*(vc(4)+im*vc(5))-
+     $        dcmplx(p1(1),p1(2))*(vc(3)+vc(6)))
+         fi(5) = -fmass1*fitot(4)*(vc(4)-im*vc(5))+
+     $        fitot(5)*(-dcmplx(p1(1),-p1(2))*(vc(4)+im*vc(5))+
+     $        dcmplx(p1(0)+p1(3),0.D0)*(vc(3)-vc(6)))-
+     $        fmass1*fitot(3)*(vc(3)+vc(6))+fitot(6)*
+     $        (-dcmplx(p1(0)+p1(3),0.D0)*(vc(4)-im*vc(5))+
+     $        dcmplx(p1(1),-p1(2))*(vc(3)+vc(6)))
+         fi(6) = -fmass1*fitot(3)*(vc(4)+im*vc(5))+
+     $        fitot(5)*(-dcmplx(p1(0)-p1(3),0.D0)*(vc(4)+im*vc(5))+
+     $        dcmplx(p1(1),p1(2))*(vc(3)-vc(6)))-
+     $        fmass1*fitot(4)*(vc(3)-vc(6))+fitot(6)*
+     $        (-dcmplx(p1(1),p1(2))*(vc(4)-im*vc(5))+
+     $        dcmplx(p1(0)-p1(3),0.D0)*(vc(3)+vc(6)))
+      else
+         print *,"wrong of spin in onia_ixxxxx"
+         stop
+      endif
+      return
+      end
+C     corresponds to ubar(P,lambda) (p1s-m1) in notes <-- check normalisation
+      subroutine onia_oxxxxx(p1, fmass1, ptot, fmasstot,
+     $     nhel,fo)
+      implicit none
+      double complex fo(6),fotot(6),vc(6)
+      double precision p1(0:3),ptot(0:3),fmass1,fmasstot,fmass2,fact
+      integer nhel
+
+      double precision rZero, rHalf, rTwo
+      parameter( rZero = 0.0d0, rHalf = 0.5d0, rTwo = 2.0d0 )
+      double complex im
+      parameter( im = dcmplx(0.D0,1.0D0))
+
+      fo(1) = dcmplx(p1(0),p1(3))*(+1)
+      fo(2) = dcmplx(p1(1),p1(2))*(+1)
+
+c     take nhel -> -nhel 
+c     so that nhel in onia_oxxxxx and onia_ixxxxx is the same
+      call oxxxxx(ptot,fmasstot,nhel,1,fotot)
+
+      fo(3) = fmass1*fotot(3)+dcmplx(p1(1),p1(2))*fotot(6)+
+     $     dcmplx(p1(0)+p1(3),0.D0)*fotot(5)
+      fo(4) = fmass1*fotot(4)+dcmplx(p1(1),-p1(2))*fotot(5)+
+     $     dcmplx(p1(0)-p1(3),0.D0)*fotot(6)
+      fo(5) = fmass1*fotot(5)+dcmplx(-p1(1),-p1(2))*fotot(4)+
+     $     dcmplx(p1(0)-p1(3),0.D0)*fotot(3)
+      fo(6) = fmass1*fotot(6)+dcmplx(-p1(1),p1(2))*fotot(3)+
+     $     dcmplx(p1(0)+p1(3),0.D0)*fotot(4)
+      fmass2 = fmasstot-fmass1
+      fact = SQRT(32d0*fmass2*fmass1)*fmasstot
+      fo(3) = fo(3)/fact
+      fo(4) = fo(4)/fact
+      fo(5) = fo(5)/fact
+      fo(6) = fo(6)/fact
+      return
+      end
+      
       subroutine ixxxxx(p, fmass, nhel, nsf ,fi)
 c
 c This subroutine computes a fermion wavefunction with the flowing-IN
@@ -73,7 +172,7 @@ c#endif
       fi(1) = dcmplx(p(0),p(3))*nsf*-1
       fi(2) = dcmplx(p(1),p(2))*nsf*-1
 
-      nh = nhel*nsf
+      nh = nhel*nsf*1
 
       if ( fmass.ne.rZero ) then
 
