@@ -1829,7 +1829,6 @@ class gen_ximprove_gridpack(gen_ximprove_v4):
     max_request_event = 1e12         # split jobs if a channel if it needs more than that 
     max_event_in_iter = 4000
     min_event_in_iter = 500
-    combining_job = sys.maxsize
     gen_events_security = 1.00
 
     def __new__(cls, *args, **opts):
@@ -1840,6 +1839,7 @@ class gen_ximprove_gridpack(gen_ximprove_v4):
     def __init__(self, *args, **opts):
         
         self.ngran = -1
+        self.nprocs = 1
         self.gscalefact = {}
         self.readonly = False
         if 'ngran' in opts:
@@ -1847,9 +1847,16 @@ class gen_ximprove_gridpack(gen_ximprove_v4):
 #            del opts['ngran']
         if 'readonly' in opts:
             self.readonly = opts['readonly']
+        if 'nprocs' in opts:
+            self.nprocs = opts['nprocs']
         super(gen_ximprove_gridpack,self).__init__(*args, **opts)
         if self.ngran == -1:
             self.ngran = 1 
+
+        if self.nprocs > 1:
+            self.combining_job = 0
+        else:
+            self.combining_job = sys.maxsize
      
     def find_job_for_event(self):
         """return the list of channel that need to be improved"""
@@ -1945,25 +1952,35 @@ class gen_ximprove_gridpack(gen_ximprove_v4):
         write_dir = '.' if self.readonly else None  
         self.create_ajob(pjoin(self.me_dir, 'SubProcesses', 'refine.sh'), jobs, write_dir) 
         
+        if self.nprocs > 1:
+            nprocs_cluster = cluster.MultiCore(nb_core=self.nprocs)
+
         done = []
         for j in jobs:
-            if j['P_dir'] in done:
-                continue
-            done.append(j['P_dir'])
-            # Give a little status. Sometimes these jobs run very long, and having hours without any
-            # console output can be a bit frightening and make users think we are looping.
-            if len(done)%5==0:
-                logger.info(f"Working on job {len(done)} of {len(jobs)}")
+            if self.nprocs == 1:
+                if j['P_dir'] in done:
+                    continue
+                done.append(j['P_dir'])
+                # Give a little status. Sometimes these jobs run very long, and having hours without any
+                # console output can be a bit frightening and make users think we are looping.
+                if len(done)%5==0:
+                    logger.info(f"Working on job {len(done)} of {len(jobs)}")
 
             # set the working directory path.
             pwd = pjoin(os.getcwd(),j['P_dir']) if self.readonly else pjoin(self.me_dir, 'SubProcesses', j['P_dir'])
-            exe = pjoin(pwd, 'ajob1')
+            exe = pjoin(pwd, j['script_name'])
             st = os.stat(exe)
             os.chmod(exe, st.st_mode | stat.S_IEXEC)
 
             # run the code\
-            cluster.onecore.launch_and_wait(exe, cwd=pwd, packet_member=j['packet'])
+            if self.nprocs == 1:
+                cluster.onecore.launch_and_wait(exe, cwd=pwd, packet_member=j['packet'])
+            else:
+                nprocs_cluster.submit(exe, cwd=pwd)
         write_dir = '.' if self.readonly else pjoin(self.me_dir, 'SubProcesses')
+
+        if self.nprocs > 1:
+            nprocs_cluster.wait(self.me_dir, lambda Idle, Running, Done: Idle+Running+Done == 0)
 
         self.check_events(goal_lum, to_refine, jobs, write_dir)
     
